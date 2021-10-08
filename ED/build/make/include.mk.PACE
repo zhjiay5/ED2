@@ -1,0 +1,74 @@
+#Makefile include include.mk.opt
+
+MAKE=/usr/bin/make
+
+BASE=$(ED_ROOT)/build
+
+NCARG_DIR=/storage/home/hcoda1/3/jzhang832/.conda/envs/ncl_stable/lib   
+LIBNCARG=-L$(NCARG_DIR) -lncarg -lncarg_gks -lncarg_c -L/usr/lib64 -lX11 -ldl
+
+
+USE_HDF5=1
+
+HDF5_HOME=/usr/local/pace-apps/spack/packages/0.12/linux-rhel7-x86_64/gcc-8.3.0/hdf5-1.10.5-j7inhbpez2asbgqse2h4kh2aohtjdwdn
+HDF5_INCS=-I${HDF5_HOME}/include
+HDF5C_INCS=-I${HDF5_HOME}/include
+HDF5_LIBS=-L${HDF5_HOME}/lib -lhdf5_fortran -lhdf5 -lhdf5_hl \
+        -L/usr/local/pace-apps/spack/packages/0.12/linux-rhel7-x86_64/gcc-8.3.0/zlib-1.2.11-5f4a54woz6skqvujxfvtoq2dzmsgzm4g/lib -lz
+
+# HDF_LIBS=-L$(BASE)/.hdf4_libs -lmfhdf -ldf -lz -ljpeg -lsz
+
+HDF_LIBS=-L/storage/coda1/testflight/jzhang832/hdf/hdf-4.2.15/hdf4/lib -lmfhdf -ldf \
+	-L/usr/lib64 -ljpeg \
+	-L/usr/local/pace-apps/spack/packages/0.12/linux-rhel7-x86_64/gcc-8.3.0/libszip-2.1.1-dqg4jkpt3k5ew3d6zzj7w5fnerinl4n2/lib -lsz \
+	-L${HDF5_HOME}/lib -lz
+
+USE_COLLECTIVE_MPIO=0
+
+USENC=1
+NC_LIBS=-L/usr/local/pace-apps/spack/packages/0.13/linux-rhel7-x86_64/gcc-8.3.0/netcdf-fortran-4.5.2-fl5axslvwqtap63u2x2muewwejxcyh3x/lib -lnetcdff
+
+USE_INTERF=1
+
+USE_MPIWTIME=1
+
+#################################### COMPILER SETTINGS #####################################
+CMACH=PC_GFORTRAN
+F_COMP=mpif90
+C_COMP=mpicc
+LOADER=mpif90
+LIBS=
+MOD_EXT=mod
+#------------------------------------------------------------------------------------------#
+
+
+##################################### COMPILER OPTIONS #####################################
+ifeq ($(KIND_COMP),)
+   KIND_COMP=E
+endif
+ifeq ($(KIND_COMP),$(filter $(KIND_COMP), A B C D))
+   F_OPTS=-g -ffree-line-length-none -fno-whole-file -O0 -fopenmp -ffpe-trap=invalid,zero,overflow -fbounds-check #-std=f2003
+   C_OPTS=-fopenmp -g -O0 -ffpe-trap=invalid,zero,overflow -fbounds-check
+   LOADER_OPTS=${F_OPTS}
+endif
+ifeq ($(KIND_COMP),E)
+   F_OPTS=-g -ffree-line-length-none -fno-whole-file -O2 -fopenmp #-ffpe-trap=invalid,zero,overflow -fbounds-check  #-O2
+   C_OPTS=-g -O2 -fopenmp #-ffpe-trap=invalid,zero,overflow -fbounds-check #-O2
+   LOADER_OPTS=${F_OPTS}
+endif
+#------------------------------------------------------------------------------------------#
+
+# if using MPI libraries
+MPI_PATH=
+PAR_INCS=
+PAR_LIBS=
+PAR_DEFS=-DRAMS_MPI
+
+# else if compiling for a single-cpu platform
+# PAR_LIBS=
+# PAR_DEFS=
+
+ARCHIVE=ar rs
+
+
+

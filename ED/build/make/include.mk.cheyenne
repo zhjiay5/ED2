@@ -1,0 +1,77 @@
+#Makefile include include.mk.opt
+
+MAKE=/usr/bin/make
+
+BASE=$(ED_ROOT)/build
+
+# NCARG_DIR=/glade/u/apps/ch/opt/ncl/6.6.2/intel/18.0.5/lib 
+NCARG_DIR=/glade/u/apps/ch/opt/ncl/6.6.2/gnu/8.3.0/lib
+LIBNCARG=-L${NCARG_DIR} -lncarg -lncarg_gks -lncarg_c -L/usr/lib64 -lX11 -ldl
+
+
+USE_HDF5=1
+# HDF5_HOME=/glade/u/apps/ch/opt/netcdf/4.7.3/intel/18.0.5
+HDF5_HOME=/glade/u/apps/ch/opt/netcdf/4.7.3/gnu/8.3.0
+
+# HDF_LIBS=-L/glade/u/apps/ch/opt/hdf/4.2.14/intel/18.0.5/lib -lmfhdf -ldf \
+#	-L/usr/lib64 -ljpeg \
+#	-L${HDF5_HOME}/lib -lsz -lz
+
+HDF_LIBS=-L/glade/u/apps/ch/opt/hdf/4.2.14/gnu/8.3.0/lib -lmfhdf -ldf \
+	-L/usr/lib64 -ljpeg \
+	-L${HDF5_HOME}/lib -lsz -lz
+
+
+HDF5_INCS=-I${HDF5_HOME}/include
+HDF5C_INCS=-I${HDF5_HOME}/include
+HDF5_LIBS=-lm -lz -L${HDF5_HOME}/lib -lhdf5 -lhdf5_fortran -lhdf5_hl
+
+USE_COLLECTIVE_MPIO=0
+
+USENC=1
+NC_LIBS=-L${HDF5_HOME}/lib -lnetcdf
+
+USE_INTERF=1
+
+USE_MPIWTIME=0
+
+#################################### COMPILER SETTINGS #####################################
+CMACH=PC_GFORTRAN
+F_COMP=mpif90
+C_COMP=mpicc
+LOADER=mpif90
+LIBS=
+MOD_EXT=mod
+#------------------------------------------------------------------------------------------#
+
+
+##################################### COMPILER OPTIONS #####################################
+ifeq ($(KIND_COMP),)
+   KIND_COMP=E
+endif
+ifeq ($(KIND_COMP),$(filter $(KIND_COMP), A B C D))
+   F_OPTS=-g -ffree-line-length-none -fno-whole-file -O0 -fopenmp -ffpe-trap=invalid,zero,overflow -fbounds-check #-std=f2003
+   C_OPTS=-fopenmp -g -O0 -ffpe-trap=invalid,zero,overflow -fbounds-check
+   LOADER_OPTS=${F_OPTS}
+endif
+ifeq ($(KIND_COMP),E)
+   F_OPTS=-g -ffree-line-length-none -fno-whole-file -O2 -fopenmp #-ffpe-trap=invalid,zero,overflow -fbounds-check  #-O2
+   C_OPTS=-g -O2 -fopenmp #-ffpe-trap=invalid,zero,overflow -fbounds-check #-O2
+   LOADER_OPTS=${F_OPTS}
+endif
+#------------------------------------------------------------------------------------------#
+
+# if using MPI libraries
+# MPI_PATH=
+# PAR_INCS=
+# PAR_LIBS=
+# PAR_DEFS=-DRAMS_MPI
+
+# else if compiling for a single-cpu platform
+PAR_LIBS=
+PAR_DEFS=
+
+ARCHIVE=ar rs
+
+
+
