@@ -58,8 +58,6 @@ module met_driver_coms
    real               :: dt_radinterp         ! Time step used to perform the daytime 
                                               !    average of the secant of the zenith
                                               !    angle. 
-   real               :: met_land_min         ! Minimum land fraction for a met driver
-                                              !    point to be considered land
    !---------------------------------------------------------------------------------------!
 
 
@@ -94,11 +92,9 @@ module met_driver_coms
    real                      , allocatable, dimension(:,:) :: met_frq
    integer                   , allocatable, dimension(:,:) :: met_interp
    integer                   , allocatable, dimension(:)   :: metyears
-   logical                   , allocatable, dimension(:)   :: met_ll_header
-   logical                   , allocatable, dimension(:)   :: met_land_mask
-   real                      , allocatable, dimension(:,:) :: lon2d
+   logical                   , allocatable, dimension(:)   :: no_ll
    real                      , allocatable, dimension(:,:) :: lat2d
-   real                      , allocatable, dimension(:,:) :: land2d
+   real                      , allocatable, dimension(:,:) :: lon2d
    !---------------------------------------------------------------------------------------!
 
 

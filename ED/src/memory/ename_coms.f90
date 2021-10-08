@@ -11,7 +11,8 @@ module ename_coms
                          , n_pft          & ! intent(in)
                          , maxgrds        & ! intent(in)
                          , nzgmax         & ! intent(in)
-                         , maxpvars       ! ! intent(in)
+                         , maxpvars       & ! intent(in)
+                         , ndbhmax        ! ! intent(in)  !!!jiaying
    implicit none
 
    !---------------------------------------------------------------------------------------!
@@ -44,7 +45,6 @@ module ename_coms
       !----- Timestep specification. ------------------------------------------------------!
       real                                              :: dtlsm
       real                                              :: radfrq
-      integer                                           :: month_yrstep
 
       !----- Analysis/history files. ------------------------------------------------------!
       integer                                           :: ifoutput
@@ -97,18 +97,12 @@ module ename_coms
       integer                                           :: nzg
       integer                                           :: nzs
       integer               , dimension(maxgrds)        :: isoilflg
-      integer               , dimension(maxgrds)        :: islcolflg
       integer                                           :: nslcon
       integer                                           :: isoilcol
       real                                              :: slxclay
       real                                              :: slxsand
-      real                                              :: slsoc
-      real                                              :: slph
-      real                                              :: slcec
-      real                                              :: sldbd
       integer                                           :: isoilstateinit
       integer                                           :: isoildepthflg
-      integer                                           :: soil_hydro_scheme
       integer                                           :: isoilbc
       real                                              :: sldrain
 
@@ -118,7 +112,6 @@ module ename_coms
 
       !----- Input databases. -------------------------------------------------------------!
       character(len=str_len), dimension(maxgrds)        :: soil_database
-      character(len=str_len), dimension(maxgrds)        :: slcol_database
       character(len=str_len), dimension(maxgrds)        :: veg_database
       character(len=str_len), dimension(maxgrds)        :: lu_database
       character(len=str_len), dimension(maxgrds)        :: plantation_file
@@ -147,11 +140,9 @@ module ename_coms
       integer                                           :: ivegt_dynamics
       integer                                           :: ibigleaf
       integer                                           :: integration_scheme
-      integer                                           :: nsub_euler
       integer                                           :: plant_hydro_scheme
       integer                                           :: istomata_scheme
       integer                                           :: istruct_growth_scheme
-      integer                                           :: istem_respiration_scheme
       integer                                           :: trait_plasticity_scheme
       integer                                           :: growth_resp_scheme
       integer                                           :: storage_resp_scheme
@@ -159,14 +150,12 @@ module ename_coms
       integer                                           :: ibranch_thermo
       integer                                           :: iphysiol
       integer                                           :: iallom
-      integer                                           :: economics_scheme
       integer                                           :: igrass
       integer                                           :: iphen_scheme
       integer                                           :: repro_scheme
       integer                                           :: lapse_scheme
       integer                                           :: crown_mod
       integer                                           :: icanrad
-      integer                                           :: ihrzrad
       real                                              :: ltrans_vis
       real                                              :: ltrans_nir
       real                                              :: lreflect_vis
@@ -175,17 +164,13 @@ module ename_coms
       real                                              :: orient_grass
       real                                              :: clump_tree
       real                                              :: clump_grass
-      integer                                           :: igoutput
-      character(len=str_len)                            :: gfilout
       integer                                           :: h2o_plant_lim
       integer                                           :: iddmort_scheme
       integer                                           :: cbr_scheme
       real                                              :: ddmort_const
-      integer                                           :: carbon_mortality_scheme
-      integer                                           :: hydraulic_mortality_scheme
       real                                              :: vmfact_c3
       real                                              :: vmfact_c4
-      real                                              :: mphoto_trc3
+      real                 , dimension(n_pft)           :: mphoto_trc3   !!!Jiaying
       real                                              :: mphoto_tec3
       real                                              :: mphoto_c4
       real                                              :: bphoto_blc3
@@ -193,17 +178,17 @@ module ename_coms
       real                                              :: bphoto_c4
       real                                              :: kw_grass
       real                                              :: kw_tree
-      real                                              :: gamma_c3
+      real                 , dimension(n_pft)           :: gamma_c3      !!!Jiaying
       real                                              :: gamma_c4
       real                                              :: d0_grass
       real                                              :: d0_tree
-      real                                              :: alpha_c3
+      real                 , dimension(n_pft)           :: alpha_c3      !!!Jiaying
       real                                              :: alpha_c4
       real                                              :: klowco2in
       real                                              :: rrffact
-      real                                              :: growthresp
+      real                 , dimension(n_pft)           :: growthresp    !!!Jiaying
       real                                              :: lwidth_grass
-      real                                              :: lwidth_bltree
+      real                 , dimension(n_pft)           :: lwidth_bltree !!!Jiaying
       real                                              :: lwidth_nltree
       real                                              :: q10_c3
       real                                              :: q10_c4
@@ -216,26 +201,11 @@ module ename_coms
       real                                              :: fire_parameter
       real                                              :: sm_fire
       integer                                           :: ianth_disturb
-      integer                                           :: sl_scale
-      integer                                           :: sl_yr_first
-      integer                                           :: sl_nyrs
-      integer               , dimension(n_pft)          :: sl_pft
-      real                  , dimension(n_pft)          :: sl_prob_harvest
-      real                  , dimension(n_pft)          :: sl_mindbh_harvest
-      real                                              :: sl_biomass_harvest
-      real                                              :: sl_skid_rel_area
-      real                                              :: sl_skid_s_gtharv
-      real                                              :: sl_skid_s_ltharv
-      real                                              :: sl_felling_s_ltharv
-      real                                              :: cl_fseeds_harvest
-      real                                              :: cl_fstorage_harvest
-      real                                              :: cl_fleaf_harvest
       integer                                           :: icanturb
       integer                                           :: isfclyrm
       integer                                           :: ied_grndvap
       integer                                           :: ipercol
       integer               , dimension(n_pft)          :: include_these_pft
-      integer                                           :: pasture_stock
       integer                                           :: agri_stock
       integer                                           :: plantation_stock
       integer                                           :: pft_1st_check
@@ -290,12 +260,45 @@ module ename_coms
       integer                                           :: patch_keep
 
       !----- Variables that control the sought number of patches and cohorts. -------------!
-      integer                                           :: ifusion
       integer                                           :: maxsite
       integer                                           :: maxpatch
       integer                                           :: maxcohort
       real                                              :: min_site_area
       real                                              :: min_patch_area
+
+      !----- Variables that control Hurricane disturbances -----------------------------!
+      integer                                           :: hurricane_ndbhclass        !!!Jiaying
+      real                                              :: hurricane_wind_threshold   !!!Jiaying
+      real                                              :: hurricane_distrate_a       !!!jiaying
+      real                                              :: hurricane_distrate_b       !!!jiaying
+      real            , dimension(ndbhmax*n_pft)        :: hurricane_s_a              !!!jiaying
+      real            , dimension(ndbhmax*n_pft)        :: hurricane_s_b              !!!jiaying
+      real            , dimension(ndbhmax+1)            :: hurricane_dbh_class        !!!Jiaying
+      real                                              :: hurricane_defoliaterate    !!!Jiaying
+      !----- Variables that are read from namelist with 18 PFT values ------------------!
+      real            , dimension(n_pft)                :: Vm0IN                     !!!Jiaying
+      real            , dimension(n_pft)                :: SLAIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: LTRIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: FRAIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: IDeIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: IDDIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: WDeIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: SbfIN                     !!!Jiaying
+      real            , dimension(n_pft)                :: b1HtIN                    !!!Jiaying
+      real            , dimension(n_pft)                :: b2HtIN                    !!!Jiaying
+      real            , dimension(n_pft)                :: hgtmnIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: dbhADIN                   !!!Jiaying 
+      real            , dimension(n_pft)                :: b1BlsIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b1BllIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b2BlsIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b2BllIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: bleafADIN                 !!!Jiaying 
+      real            , dimension(n_pft)                :: b1BssIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b1BslIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b2BssIN                   !!!Jiaying
+      real            , dimension(n_pft)                :: b2BslIN                   !!!Jiaying
+
+
 
       !----- Roughness length. ------------------------------------------------------------!
       real                                              :: zrough
@@ -349,7 +352,6 @@ module ename_coms
 
       enl%dtlsm                     = undef_real
       enl%radfrq                    = undef_real
-      enl%month_yrstep              = undef_integer
 
       enl%ifoutput                  = undef_integer
       enl%idoutput                  = undef_integer
@@ -402,18 +404,12 @@ module ename_coms
       enl%nzg                       = undef_integer
       enl%nzs                       = undef_integer
       enl%isoilflg                  = (/ (undef_integer,i=1,maxgrds) /)
-      enl%islcolflg                 = (/ (undef_integer,i=1,maxgrds) /)
       enl%nslcon                    = undef_integer
       enl%isoilcol                  = undef_integer
       enl%slxclay                   = undef_real
       enl%slxsand                   = undef_real
-      enl%slsoc                     = undef_real
-      enl%slph                      = undef_real
-      enl%slcec                     = undef_real
-      enl%sldbd                     = undef_real
       enl%isoilstateinit            = undef_integer
       enl%isoildepthflg             = undef_integer
-      enl%soil_hydro_scheme         = undef_integer
       enl%isoilbc                   = undef_integer
       enl%sldrain                   = undef_real
 
@@ -423,7 +419,6 @@ module ename_coms
 
 
       enl%soil_database             = (/ (undef_path, i=1,maxgrds) /)
-      enl%slcol_database            = (/ (undef_path, i=1,maxgrds) /)
       enl%veg_database              = (/ (undef_path, i=1,maxgrds) /)
       enl%lu_database               = (/ (undef_path, i=1,maxgrds) /)
       enl%plantation_file           = (/ (undef_path, i=1,maxgrds) /)
@@ -451,11 +446,9 @@ module ename_coms
       enl%ivegt_dynamics            = undef_integer
       enl%ibigleaf                  = undef_integer
       enl%integration_scheme        = undef_integer
-      enl%nsub_euler                = undef_integer
       enl%plant_hydro_scheme        = undef_integer
       enl%istomata_scheme           = undef_integer
       enl%istruct_growth_scheme     = undef_integer
-      enl%istem_respiration_scheme  = undef_integer
       enl%trait_plasticity_scheme   = undef_integer
       enl%growth_resp_scheme        = undef_integer
       enl%storage_resp_scheme       = undef_integer
@@ -463,14 +456,12 @@ module ename_coms
       enl%ibranch_thermo            = undef_integer
       enl%iphysiol                  = undef_integer
       enl%iallom                    = undef_integer
-      enl%economics_scheme          = undef_integer
       enl%igrass                    = undef_integer
       enl%iphen_scheme              = undef_integer
       enl%repro_scheme              = undef_integer
       enl%lapse_scheme              = undef_integer
       enl%crown_mod                 = undef_integer
       enl%icanrad                   = undef_integer
-      enl%ihrzrad                   = undef_integer
       enl%ltrans_vis                = undef_real
       enl%ltrans_nir                = undef_real
       enl%lreflect_vis              = undef_real
@@ -479,14 +470,10 @@ module ename_coms
       enl%orient_grass              = undef_real
       enl%clump_tree                = undef_real
       enl%clump_grass               = undef_real
-      enl%igoutput                  = undef_integer
-      enl%gfilout                   = undef_path
       enl%h2o_plant_lim             = undef_integer
       enl%iddmort_scheme            = undef_integer
       enl%cbr_scheme                = undef_integer
       enl%ddmort_const              = undef_real
-      enl%carbon_mortality_scheme   = undef_integer
-      enl%hydraulic_mortality_scheme= undef_integer
       enl%vmfact_c3                 = undef_real
       enl%vmfact_c4                 = undef_real
       enl%mphoto_trc3               = undef_real
@@ -520,26 +507,11 @@ module ename_coms
       enl%fire_parameter            = undef_real
       enl%sm_fire                   = undef_real
       enl%ianth_disturb             = undef_integer
-      enl%sl_scale                  = undef_integer
-      enl%sl_yr_first               = undef_integer
-      enl%sl_nyrs                   = undef_integer
-      enl%sl_pft                    = (/(undef_integer,i=1,n_pft)/) 
-      enl%sl_prob_harvest           = (/(undef_real   ,i=1,n_pft)/) 
-      enl%sl_mindbh_harvest         = (/(undef_real   ,i=1,n_pft)/) 
-      enl%sl_biomass_harvest        = undef_real
-      enl%sl_skid_rel_area          = undef_real
-      enl%sl_skid_s_gtharv          = undef_real
-      enl%sl_skid_s_ltharv          = undef_real
-      enl%sl_felling_s_ltharv       = undef_real
-      enl%cl_fseeds_harvest         = undef_real
-      enl%cl_fstorage_harvest       = undef_real
-      enl%cl_fleaf_harvest          = undef_real
       enl%icanturb                  = undef_integer
       enl%isfclyrm                  = undef_integer
       enl%ipercol                   = undef_integer
 
       enl%include_these_pft         = (/(undef_integer,i=1,n_pft)/) 
-      enl%pasture_stock             = undef_integer
       enl%agri_stock                = undef_integer
       enl%plantation_stock          = undef_integer
       enl%pft_1st_check             = undef_integer
@@ -589,12 +561,43 @@ module ename_coms
       enl%idetailed                 = undef_integer
       enl%patch_keep                = undef_integer
 
-      enl%ifusion                   = undef_integer
       enl%maxsite                   = undef_integer
       enl%maxpatch                  = undef_integer
       enl%maxcohort                 = undef_integer
       enl%min_site_area             = undef_real
       enl%min_patch_area            = undef_real
+
+      enl%hurricane_wind_threshold  = undef_real                           !!!Jiaying
+      enl%hurricane_ndbhclass       = undef_integer                        !!!Jiaying
+      enl%hurricane_dbh_class       = (/(undef_real,i=1,ndbhmax+1)/)       !!!Jiaying
+      enl%hurricane_s_a             = (/(undef_real,i=1,ndbhmax*n_pft)/)   !!!Jiaying
+      enl%hurricane_s_b             = (/(undef_real,i=1,ndbhmax*n_pft)/)   !!!Jiaying
+      enl%hurricane_distrate_a      = undef_real                           !!!Jiaying
+      enl%hurricane_distrate_b      = undef_real                           !!!Jiaying
+      enl%hurricane_defoliaterate   = undef_real                           !!!Jiaying
+
+      enl%Vm0IN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%SLAIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%LTRIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%FRAIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%IDeIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%IDDIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%WDeIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%SbfIN        = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+      enl%b1HtIN       = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b2HtIN       = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%hgtmnIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%dbhADIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b1BlsIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b1BllIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b2BlsIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b2BllIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%bleafADIN    = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b1BssIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b1BslIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b2BssIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying 
+      enl%b2BslIN      = (/(undef_real,i=1,n_pft)/)                 !!!Jiaying
+
 
       enl%zrough                    = undef_real
       enl%edres                     = undef_real 

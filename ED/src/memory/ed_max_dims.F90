@@ -68,6 +68,10 @@ module ed_max_dims
    !---------------------------------------------------------------------------------------!
 
 
+   !----- Maximum number DBH bins for windthrow mortality----------------------------------!
+   integer, parameter :: ndbhmax=10   !!!Jiaying
+   !---------------------------------------------------------------------------------------!
+
 
    !---------------------------------------------------------------------------------------!
    !     Suppose you want to run ED only at a few scattered test polygons.  These are      !
@@ -132,7 +136,7 @@ module ed_max_dims
    ! 16 - Subtropical C3 grass                                                             !
    ! 17 - Araucaria                                                                        !
    !---------------------------------------------------------------------------------------!
-   integer, parameter :: n_pft = 17
+   integer, parameter :: n_pft = 18
    !---------------------------------------------------------------------------------------!
 
 
@@ -173,16 +177,15 @@ module ed_max_dims
    !---------------------------------------------------------------------------------------!
    ! Number of disturbance types:                                                          !
    !                                                                                       !
-   ! 1 -- Pasture.                                                                         !
+   ! 1 -- Clear cut (cropland and pasture).                                                !
    ! 2 -- Forest plantation.                                                               !
    ! 3 -- Tree fall.                                                                       !
    ! 4 -- Fire.                                                                            !
    ! 5 -- Forest regrowth.                                                                 !
-   ! 6 -- Logged forest (felling).                                                         !
-   ! 7 -- Logged forest (skid trail + road).                                               !
-   ! 8 -- Cropland.                                                                        !
+   ! 6 -- Logged forest.                                                                   !
+   ! 7 -- Hurricane tree fall.                                      !!! Jiaying Zhang      !
    !---------------------------------------------------------------------------------------!
-   integer, parameter :: n_dist_types = 8
+   integer, parameter :: n_dist_types = 7                           !!! Jiaying Zhang
    !---------------------------------------------------------------------------------------!
 
 
@@ -194,12 +197,11 @@ module ed_max_dims
    ! 2. Negative carbon balance;                                                           !
    ! 3. Treefall mortality;                                                                !
    ! 4. Mortality due to cold weather.                                                     !
-   ! 5. Mortality due to hydraulic failure.                                                !
-   ! 6. Disturbance mortality.  This is not directly applied to the cohort population,     !
+   ! 5. Disturbance mortality.  This is not directly applied to the cohort population,     !
    !    because this mortality is associated with the creation of a new patch, but it is   !
    !    saved here for posterior analysis.                                                 !
    !---------------------------------------------------------------------------------------!
-   integer, parameter :: n_mort = 6
+   integer, parameter :: n_mort = 5
    !---------------------------------------------------------------------------------------!
 
 
@@ -236,8 +238,8 @@ module ed_max_dims
    !  MAX_WATER    - maximum number of soil water levels (not assigned to polygons).       !
    !---------------------------------------------------------------------------------------!
    integer, parameter :: huge_polygon = nxpmax * nypmax
-   integer, parameter :: huge_patch   = 10000
-   integer, parameter :: huge_cohort  = 250000
+   integer, parameter :: huge_patch   = 3600
+   integer, parameter :: huge_cohort  = 150000
    integer, parameter :: max_water    = 100
    !---------------------------------------------------------------------------------------!
 
@@ -263,11 +265,9 @@ module ed_max_dims
 #endif
    !---------------------------------------------------------------------------------------!
 
-
    !----- Maximum observation times that can be stored by the obs_timelist ----------------!
    integer, parameter :: max_obstime = 99999
    !---------------------------------------------------------------------------------------!
-
 
    !----- Maximum number of files (site+patch+cohort). ------------------------------------!
    integer, parameter :: maxlist = 3 * maxfiles
@@ -283,8 +283,6 @@ module ed_max_dims
    character(len=str_len), parameter :: undef_character = 'nothing'
    character(len=str_len), parameter :: undef_path      = '/nowhere'
    logical               , parameter :: undef_logical   = .false.
-   integer               , parameter :: skip_integer    = huge(6)
-   real(kind=4)          , parameter :: skip_real       = huge(6.)
    !---------------------------------------------------------------------------------------!
 
 end module ed_max_dims
