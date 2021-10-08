@@ -14,14 +14,13 @@
 !    modules can be properly initialized.                                                  !
 !                                                                                          !
 !------------------------------------------------------------------------------------------!
-subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, max_threads,name_name)
-   use ed_met_driver, only : read_met_driver_head ! ! subroutine
-   use ed_para_coms , only : iparallel            & ! intent(inout)
-                           , machsize             & ! intent(out)
-                           , nthreads             ! ! intent(out)
-   use ed_misc_coms , only : runtype              ! ! intent(inout)
-   use ed_state_vars, only : allocate_edglobals   & ! subroutine
-                           , filltab_alltypes     ! ! subroutine
+subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, name_name)
+   use ed_met_driver
+   use ed_para_coms , only : iparallel          & ! intent(inout)
+                           , machsize           ! ! intent(in)
+   use ed_misc_coms , only : runtype            ! ! intent(inout)
+   use ed_state_vars, only : allocate_edglobals & ! subroutine
+                           , filltab_alltypes   ! ! subroutine
 
    implicit none
 
@@ -34,7 +33,6 @@ subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, max_threads,
    integer         , intent(in) :: nnodestotal  ! total number of nodes on any run
    integer         , intent(in) :: nslaves      ! number of slaves on a parallel run
    integer         , intent(in) :: headnode_num ! this process rank on a parallel run
-   integer         , intent(in) :: max_threads  ! Maximum number of threads
    character(len=*), intent(in) :: name_name    ! namelist file name
    !----- Local variables (MPI only). -----------------------------------------------------!
 #if defined(RAMS_MPI)
@@ -45,6 +43,7 @@ subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, max_threads,
    real                         :: wtime_start 
    !----- Local parameters, this sub-routine shan't ever be called by coupled runs. -------!
    logical         , parameter  :: masterworks = .true. ! Master should solve polygons
+   logical         , parameter  :: standalone  = .true. ! ED will be run on its own.
    !----- External functions. -------------------------------------------------------------!
    real            , external   :: walltime             ! wall time
    !---------------------------------------------------------------------------------------!
@@ -59,30 +58,21 @@ subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, max_threads,
    !----- Save parallel flag (0 - serial, 1 - parallel). ----------------------------------!
    iparallel=ipara
    
-   !----- Set up number of machines. ------------------------------------------------------!
+   !----- Setup number of machines. -------------------------------------------------------!
    machsize = nnodestotal
-   
-   !----- Set up number of threads. -------------------------------------------------------!
-   nthreads = max_threads
 
    !----- Read the namelist file. ---------------------------------------------------------!
-   write (unit=*,fmt='(a)') ' + Read namelist information.'
+   write (unit=*,fmt='(a)') 'Reading namelist information'
    call read_nl(trim(name_name))
 
-
-   write (unit=*,fmt='(a)') ' + Copy most namelist variables.'
+   write (unit=*,fmt='(a)') 'Copying namelist'
    call copy_nl('ALL_CASES')
 
-   write (unit=*,fmt='(a)') ' + Check whether to restore the run.'
-   call restore_nl()
-
-   write (unit=*,fmt='(a)') ' + Copy initialisation-dependent variables.'
-   select case (trim(runtype))
-   case ('HISTORY')
+   if (runtype == 'HISTORY') then
      call copy_nl('HISTORY')
-   case default
+   else
      call copy_nl('NOT_HISTORY')
-   end select
+   end if
 
    !---------------------------------------------------------------------------------------!
    !    Now that the namelist is loaded, I check whether all settings provided by the user !
@@ -141,7 +131,7 @@ subroutine ed_1st_master (ipara, nnodestotal,nslaves, headnode_num, max_threads,
    !     The following subroutine does node decomposition, but it also does the initial    !
    ! read-in of the land-sea mask and soil textural class.                                 !
    !---------------------------------------------------------------------------------------!
-   call ed_node_decomp(masterworks)
+   call ed_node_decomp(1,standalone,masterworks)
 #if defined(RAMS_MPI)
    if (iparallel == 1) call MPI_Barrier(MPI_COMM_WORLD,ierr)
 #endif
@@ -174,13 +164,17 @@ end subroutine ed_1st_master
 ! polygons and parameters for the nodes.  This sub-routine won't be called if this is a    !
 ! serial run.                                                                              !
 !------------------------------------------------------------------------------------------!
-subroutine ed_1st_node()
+subroutine ed_1st_node(init)
    use ed_mem_alloc, only : ed_memory_allocation ! ! subroutine
    implicit none
    !----- Pre-compiled variables from MPI. ------------------------------------------------!
 #if defined(RAMS_MPI)
    include 'mpif.h'
+#endif
+   !----- Arguments. ----------------------------------------------------------------------!
+   integer, intent(in) :: init
    !----- Local variable (MPI only). ------------------------------------------------------!
+#if defined(RAMS_MPI)
    integer             :: ierr
 #endif
    !---------------------------------------------------------------------------------------!

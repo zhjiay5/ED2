@@ -132,6 +132,7 @@ program main
    !---------------------------------------------------------------------------------------!
 
 
+
 #if defined(RAMS_MPI)
    !---------------------------------------------------------------------------------------!
    !      Find out if sequential or MPI run; if MPI run, enroll this process.  If          !
@@ -139,12 +140,9 @@ program main
    ! execution, machnum returns process rank and machsize process size.                    !
    !---------------------------------------------------------------------------------------!
    do n = 1, numarg
-       select case (cargs(n)(1:2))
-       case ('-s')
-          isingle = 1
-       case default
-          continue
-       end select
+       if (cargs(n)(1:2) == '-s') then
+          isingle=1
+       end if
    end do
    !---------------------------------------------------------------------------------------!
 
@@ -162,24 +160,10 @@ program main
       machsize = 1
    end select
    !---------------------------------------------------------------------------------------!
-#else
-   !---------------------------------------------------------------------------------------!
-   !   Set dummy values for all MPI variables.                                             !
-   !---------------------------------------------------------------------------------------!
-   isingle       = 1
-   machnum       = 0
-   machsize      = 1
-   num_procs     = 1
-   !---------------------------------------------------------------------------------------!
-#endif
-   !---------------------------------------------------------------------------------------!
-
 
 
    !---------------------------------------------------------------------------------------!
-   !     Check OMP thread and processor use and availability.  This is done outside the    !
-   !  preprocessor "if block" because it is possible to activate multithread without       !
-   ! compiling with mpif90.                                                                       !
+   ! Check OMP thread and processor use and availability.                                  !
    !                                                                                       !
    ! Note: One could use omp_get_num_threads() in loop, but that would depend on how many  !
    ! threads were open at the time of its call.                                            !
@@ -190,6 +174,7 @@ program main
    cpu           = 1
    thread_use(:) = 0
    cpu_use(:)    = 0
+
    !$ max_threads = omp_get_max_threads()
    !$ num_procs   = omp_get_num_procs()
 
@@ -197,15 +182,13 @@ program main
    do n = 1,max_threads
      !$ thread = omp_get_thread_num() + 1
      !$ cpu    = findmycpu() + 1
+
      thread_use(thread) = 1
      cpu_use(cpu)       = 1
    end do
    !$OMP END PARALLEL DO
    !---------------------------------------------------------------------------------------!
 
-
-
-   !------ Always print the banner. -------------------------------------------------------!
    write (*,'(a)')       '+---------------- MPI parallel info: --------------------+'
    write (*,'(a,1x,i6)') '+  - Machnum  =',machnum
    write (*,'(a,1x,i6)') '+  - Machsize =',machsize
@@ -216,36 +199,49 @@ program main
    write (*,'(a,1x,i6)') '+  - cpus    max: ', num_procs
    write (*,'(a)')       '+  Note: Max vals are for node, not sockets.'
    write (*,'(a)')       '+--------------------------------------------------------+'
+#else
+
+
    !---------------------------------------------------------------------------------------!
+   !   Set dummy values for all OMP variables.                                             !
+   !---------------------------------------------------------------------------------------!
+   isingle       = 1
+   machnum       = 0
+   machsize      = 1
+   max_threads   = 1
+   num_procs     = 1
+   thread        = 1
+   cpu           = 1
+   thread_use(:) = 0
+   cpu_use(:)    = 0
+   do n = 1,max_threads
+     thread_use(thread) = 1
+     cpu_use(cpu)       = 1
+   end do
+   !---------------------------------------------------------------------------------------!
+
+#endif
+   !---------------------------------------------------------------------------------------!
+
 
 
    !---------------------------------------------------------------------------------------!
    !    If this is MPI run, define master or slave process, otherwise, keep default        !
    ! (single process does full model).                                                     !
    !---------------------------------------------------------------------------------------!
-   select case (machsize)
-   case (2:)
+   if (machsize > 1) then
       ipara = 1
-      select case (machnum)
-      case (0)
-         icall = 0
-      case default
-         icall = 1
-      end select
-   case default
-      ipara = 0
-      icall = 0
-   end select
+      if (machnum /= 0) then
+         icall=1
+      end if
+   end if
    !---------------------------------------------------------------------------------------!
 
 
    !----- Master process gets number of slaves and sets process ID. -----------------------!
-   select case (icall)
-   case (0)
+   if (icall == 0) then
       nslaves=machsize-1
-   case default
-      continue
-   end select
+   end if
    !---------------------------------------------------------------------------------------!
 
 
@@ -253,28 +249,23 @@ program main
    !---------------------------------------------------------------------------------------!
    !     Master process parse command line arguments looking for "-f <namelist filename>". !
    !---------------------------------------------------------------------------------------!
-   select case (icall)
-   case (0)
+   if (icall == 0) then
       do n = 1, numarg
-         select case (cargs(n)(1:2))
-         case ('-f')
+         if (cargs(n)(1:2) == '-f') then
             name_name = cargs(n+1)(1:len_trim(cargs(n+1))-1)
-         end select
+         end if
       end do
-   case default
-      continue
-   end select
+   end if
    !---------------------------------------------------------------------------------------!
 
 
 
    !----- Read the namelist and initialize the variables in the nodes if needed. ----------!
-   select case (icall)
-   case (0)
-      call ed_1st_master(ipara,machsize,nslaves,machnum,max_threads,name_name)
-   case default
-      call ed_1st_node()
-   end select
+   if (icall == 0) then
+      call ed_1st_master(ipara,machsize,nslaves,machnum,name_name)
+   else
+      call ed_1st_node(1)
+   endif
    !---------------------------------------------------------------------------------------!
 
 
@@ -297,16 +288,11 @@ program main
    select case (isingle)
    case (0)
       call MPI_Finalize(ierr)
-   case default
-      continue
    end select
 #endif
-   select case (icall)
-   case (0)
-      write(unit=*,fmt='(a)') ' ------ ED-2.2 execution ends ------'
-   case default
-      continue
-   end select
+   if (icall == 0) then
+       write(unit=*,fmt='(a)') ' ------ ED-2.2 execution ends ------'
+   end if
    !---------------------------------------------------------------------------------------!
 
    stop
